@@ -1,9 +1,20 @@
 import { LoaderFunctionArgs, useLoaderData } from 'react-router';
+import ReactMarkdown from 'react-markdown';
 import { Video } from '../types/Video';
-import { mockVideo } from '../mock';
 
-export async function loader({ params }: LoaderFunctionArgs): Promise<Video> {
-  return mockVideo;
+export async function loader({ params }: LoaderFunctionArgs): Promise<Video | null> {
+  const res = await fetch(
+    `https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics&id=${params.id}&key=${
+      import.meta.env.VITE_YT_API_KEY
+    }`
+  );
+
+  if (res.status !== 200) {
+    return null;
+  }
+
+  const data = await res.json();
+  return data.items[0];
 }
 
 export default function VideoId() {
@@ -25,7 +36,9 @@ export default function VideoId() {
         <h2 className="text-xl">{video.snippet.channelTitle}</h2>
         <span className="text-zinc-500">{video.statistics?.viewCount} views</span>
       </div>
-      <div className="mt-2 text-zinc-400" dangerouslySetInnerHTML={{ __html: video.snippet.description }}></div>
+      <div className="mt-2 text-zinc-400">
+        <ReactMarkdown>{video.snippet.description}</ReactMarkdown>
+      </div>
     </div>
   );
 }

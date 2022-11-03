@@ -1,17 +1,27 @@
 import { LoaderFunctionArgs, Outlet, useLoaderData } from 'react-router';
-import { mockVideo } from '../mock';
-import { Video } from '../types/Video';
 import VideosList from '../components/VideosList';
+import { SearchItem } from '../types/SearchItem';
 
-export async function loader({ request }: LoaderFunctionArgs): Promise<Video[]> {
+export async function loader({ request }: LoaderFunctionArgs): Promise<SearchItem[]> {
   const url = new URL(request.url);
   const q = url.searchParams.get('q');
 
-  return [mockVideo, mockVideo, mockVideo];
+  const res = await fetch(
+    `https://www.googleapis.com/youtube/v3/search?part=snippet,id&q=${q || ''}&type=video&maxResults=16&key=${
+      import.meta.env.VITE_YT_API_KEY
+    }`
+  );
+
+  if (res.status !== 200) {
+    return [];
+  }
+
+  const data = await res.json();
+  return data.items;
 }
 
 export default function Videos() {
-  const videos = useLoaderData() as Video[];
+  const videos = useLoaderData() as SearchItem[];
 
   return (
     <div className="flex gap-10">
